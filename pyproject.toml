@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "llmbot_plugin_bilisearch"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "llmbot_plugin_bilisearch" }]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+bilibili-api-python = "^16.1.0"
+urllib3 = "^1.26.16"  # Needed cause of a bug in poetry
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.plugins."llmbot.extra.plugin"]
+# The entrypoint name is the name of the plugin.
+# 前面和后面都要唯一，注册钩子的时候会用到
+bilisearch = "llmbot_plugin_bilisearch"
