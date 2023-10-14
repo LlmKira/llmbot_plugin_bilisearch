@@ -6,14 +6,14 @@
 import os
 
 import inscriptis
-from llmbot.middleware.chain_box import Chain, CHAIN_MANAGER
-from llmbot.middleware.user import SubManager, UserInfo
-from llmbot.schema import RawMessage
-from llmbot.sdk.endpoint import openai
-from llmbot.sdk.func_calling import BaseTool, PluginMetadata
-from llmbot.sdk.func_calling.schema import FuncPair
-from llmbot.sdk.schema import Message, Function
-from llmbot.task import Task, TaskHeader
+from llmkira.middleware.chain_box import Chain, CHAIN_MANAGER
+from llmkira.middleware.user import SubManager, UserInfo
+from llmkira.schema import RawMessage
+from llmkira.sdk.endpoint import openai
+from llmkira.sdk.func_calling import BaseTool, PluginMetadata
+from llmkira.sdk.func_calling.schema import FuncPair
+from llmkira.sdk.schema import Message, Function
+from llmkira.task import Task, TaskHeader
 from loguru import logger
 from pydantic import BaseModel
 

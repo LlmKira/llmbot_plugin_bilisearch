@@ -15,7 +15,7 @@ bilibili-api-python = "^16.1.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.plugins."llmbot.extra.plugin"]
+[tool.poetry.plugins."llmkira.extra.plugin"]
 # The entrypoint name is the name of the plugin.
 # 前面和后面都要唯一，注册钩子的时候会用到
 bilisearch = "llmbot_plugin_bilisearch"
