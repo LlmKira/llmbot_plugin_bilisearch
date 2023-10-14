@@ -10,7 +10,6 @@ packages = [{ include = "llmbot_plugin_bilisearch" }]
 [tool.poetry.dependencies]
 python = "^3.9"
 bilibili-api-python = "^16.1.0"
-urllib3 = "^1.26.16"  # Needed cause of a bug in poetry
 
 [build-system]
 requires = ["poetry-core"]
