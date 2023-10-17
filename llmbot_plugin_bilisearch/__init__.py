@@ -146,6 +146,7 @@ class BiliBiliSearch(BaseTool):
         """
         处理message，返回message
         """
+        env = kwargs.get("env", {})
         try:
             _set = Bili.parse_obj(arg)
             _search_result = await search_on_bilibili(_set.keywords)
