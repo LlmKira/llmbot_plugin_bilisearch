@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2023/10/14 下午1:58
-# @Author  : sudoskys
-# @File    : __init__.py.py
-# @Software: PyCharm
-import os
+__plugin_name__ = "search_in_bilibili"
+__openapi_version__ = "20231017"
 
+from llmkira.sdk.func_calling import verify_openapi_version
+
+verify_openapi_version(__plugin_name__, __openapi_version__)
+
+import os
 import inscriptis
-from llmkira.middleware.chain_box import Chain, CHAIN_MANAGER
 from llmkira.middleware.user import SubManager, UserInfo
 from llmkira.schema import RawMessage
 from llmkira.sdk.endpoint import openai
@@ -16,8 +17,6 @@ from llmkira.sdk.schema import Message, Function
 from llmkira.task import Task, TaskHeader
 from loguru import logger
 from pydantic import BaseModel
-
-__plugin_name__ = "search_in_bilibili"
 
 bilibili = Function(name=__plugin_name__, description="Search videos on bilibili.com(哔哩哔哩)")
 bilibili.add_property(
@@ -141,14 +140,7 @@ class BiliBiliSearch(BaseTool):
         return result.default_message.content
 
     async def callback(self, sign: str, task: TaskHeader):
-        if sign == "reply":
-            chain: Chain = await CHAIN_MANAGER.get_task(user_id=str(task.receiver.user_id))
-            if chain:
-                logger.info(f"{__plugin_name__}:chain callback locate in {sign} be sent")
-                await Task(queue=chain.address).send_task(task=chain.arg)
-            return True
-        else:
-            return False
+        return True
 
     async def run(self, task: TaskHeader, receiver: TaskHeader.Location, arg, **kwargs):
         """
@@ -194,7 +186,3 @@ __plugin_meta__ = PluginMetadata(
         FuncPair(function=bilibili, tool=BiliBiliSearch)
     }
 )
-
-
-def resign():
-    pass
