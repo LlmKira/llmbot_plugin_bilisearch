@@ -10,7 +10,8 @@
 ## 📦 Install
 
 ```shell
-pip install llmbot_plugin_bilisearch
+pip install llmbot_plugin_bilisearch -U
+
 
 ```
 
