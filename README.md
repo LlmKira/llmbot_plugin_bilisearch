@@ -11,11 +11,10 @@
 
 ```shell
 pip install llmbot_plugin_bilisearch -U
-
+```
 
 https://github.com/LlmKira/llmbot_plugin_bilisearch/blob/main/llmbot_plugin_bilisearch/__init__.py#L2-L8
 
-```
 
 ## 📝 Hook
 
