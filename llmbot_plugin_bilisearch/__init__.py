@@ -76,7 +76,7 @@ class BiliBiliSearch(BaseTool):
             logger.error(f"Plugin:bilibili:package <bilibili_api> not installed:{e}")
             return False
 
-    def func_message(self, message_text):
+    def func_message(self, message_text, **kwargs):
         """
         如果合格则返回message，否则返回None，表示不处理
         """
@@ -90,19 +90,20 @@ class BiliBiliSearch(BaseTool):
                 return self.function
         return None
 
-    async def failed(self, platform, task, receiver, reason):
+    async def failed(self, platform, task, receiver, reason, **kwargs):
         try:
+            _meta = task.task_meta.reply_notify(
+                plugin_name=__plugin_name__,
+                callback=TaskHeader.Meta.Callback(
+                    role="function",
+                    name=__plugin_name__
+                )
+            )
             await Task(queue=platform).send_task(
                 task=TaskHeader(
                     sender=task.sender,
                     receiver=receiver,
-                    task_meta=TaskHeader.Meta(
-                        callback_forward=True,
-                        callback=TaskHeader.Meta.Callback(
-                            role="function",
-                            name=__plugin_name__
-                        ),
-                    ),
+                    task_meta=_meta,
                     message=[
                         RawMessage(
                             user_id=receiver.user_id,
@@ -150,15 +151,13 @@ class BiliBiliSearch(BaseTool):
         try:
             _set = Bili.parse_obj(arg)
             _search_result = await search_on_bilibili(_set.keywords)
-
-            _meta = task.task_meta.child(__plugin_name__)
-            _meta.callback_forward = True
-            _meta.callback_forward_reprocess = True
-            _meta.callback = TaskHeader.Meta.Callback(
-                role="function",
-                name=__plugin_name__
+            _meta = task.task_meta.reply_raw(
+                plugin_name=__plugin_name__,
+                callback=TaskHeader.Meta.Callback(
+                    role="function",
+                    name=__plugin_name__
+                )
             )
-
             await Task(queue=receiver.platform).send_task(
                 task=TaskHeader(
                     sender=task.sender,  # 继承发送者
