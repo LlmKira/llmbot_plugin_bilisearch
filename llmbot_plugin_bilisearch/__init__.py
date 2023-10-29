@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 __plugin_name__ = "search_in_bilibili"
-__openapi_version__ = "20231017"
+__openapi_version__ = "20231027"
 
 from llmkira.sdk.func_calling import verify_openapi_version
 
 verify_openapi_version(__plugin_name__, __openapi_version__)
 
-import os
 import inscriptis
-from llmkira.middleware.user import SubManager, UserInfo
 from llmkira.schema import RawMessage
-from llmkira.sdk.endpoint import openai
 from llmkira.sdk.func_calling import BaseTool, PluginMetadata
 from llmkira.sdk.func_calling.schema import FuncPair
-from llmkira.sdk.schema import Message, Function
+from llmkira.sdk.schema import Function
 from llmkira.task import Task, TaskHeader
 from loguru import logger
 from pydantic import BaseModel
@@ -90,10 +87,12 @@ class BiliBiliSearch(BaseTool):
                 return self.function
         return None
 
-    async def failed(self, platform, task, receiver, reason, **kwargs):
+    async def failed(self, platform, task: TaskHeader, receiver, reason, **kwargs):
         try:
             _meta = task.task_meta.reply_notify(
                 plugin_name=__plugin_name__,
+                write_back=True,
+                release_chain=True,
                 callback=TaskHeader.Meta.Callback(
                     role="function",
                     name=__plugin_name__
@@ -108,7 +107,7 @@ class BiliBiliSearch(BaseTool):
                         RawMessage(
                             user_id=receiver.user_id,
                             chat_id=receiver.chat_id,
-                            text=f"🍖 {__plugin_name__}操作失败了！原因：{reason}"
+                            text=f"Plugin {__plugin_name__} Run failed beacause {reason}"
                         )
                     ]
                 )
@@ -116,31 +115,7 @@ class BiliBiliSearch(BaseTool):
         except Exception as e:
             logger.error(e)
 
-    @staticmethod
-    async def llm_task(task, task_desc, raw_data):
-        """
-        环境互动实例，二次请求LLM且计费到发送者身上。
-        一般是不用的，用于额外的数据格式化上。
-        """
-        _submanager = SubManager(user_id=f"{task.sender.platform}:{task.sender.user_id}")
-        driver = _submanager.llm_driver  # 由发送人承担接受者的成本
-        model_name = os.getenv("OPENAI_API_MODEL", "gpt-3.5-turbo-0613")
-        endpoint = openai.Openai(
-            config=driver,
-            model=model_name,
-            messages=Message.create_task_message_list(
-                task_desc=task_desc,
-                refer=raw_data
-            ),
-        )
-        # 调用Openai
-        result = await endpoint.create()
-        await _submanager.add_cost(
-            cost=UserInfo.Cost(token_usage=result.usage.total_tokens, token_uuid=driver.uuid, model_name=model_name)
-        )
-        return result.default_message.content
-
-    async def callback(self, sign: str, task: TaskHeader):
+    async def callback(self, sign: str, task: TaskHeader, receiver: TaskHeader.Location, **kwargs):
         return True
 
     async def run(self, task: TaskHeader, receiver: TaskHeader.Location, arg, **kwargs):
