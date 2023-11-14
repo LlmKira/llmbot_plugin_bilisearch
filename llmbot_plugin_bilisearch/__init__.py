@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 __plugin_name__ = "search_in_bilibili"
-__openapi_version__ = "20231027"
+__openapi_version__ = "20231111"
 
+from typing import TYPE_CHECKING
+
+from llmkira.sdk import resign_plugin_executor
 from llmkira.sdk.func_calling import verify_openapi_version
 
 verify_openapi_version(__plugin_name__, __openapi_version__)
@@ -13,17 +16,24 @@ from llmkira.sdk.func_calling.schema import FuncPair
 from llmkira.sdk.schema import Function
 from llmkira.task import Task, TaskHeader
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
-bilibili = Function(name=__plugin_name__, description="Search videos on bilibili.com(哔哩哔哩)")
-bilibili.add_property(
-    property_name="keywords",
-    property_description="Keywords entered in the search box",
-    property_type="string",
-    required=True
-)
+if TYPE_CHECKING:
+    from llmkira.sdk.schema import TaskBatch
 
 
+class Bili(BaseModel):
+    """
+    Search videos on bilibili.com(哔哩哔哩)
+    """
+    keywords: str = Field(..., description="Keywords entered in the search box")
+    model_config = ConfigDict(extra="allow")
+
+
+bilibili = Function.parse_from_pydantic(schema_model=Bili, plugin_name=__plugin_name__)
+
+
+@resign_plugin_executor(function=bilibili, handle_exceptions=(Exception,))
 async def search_on_bilibili(keywords):
     from bilibili_api import search
     logger.debug(f"Plugin:search_on_bilibili {keywords}")
@@ -47,13 +57,6 @@ async def search_on_bilibili(keywords):
         _video_info = f"(Title={_video_title},Author={_video_author},Link={_video_url},Love={_video_play})"
         _info.append(_video_info)
     return "\nHintData".join(_info)
-
-
-class Bili(BaseModel):
-    keywords: str
-
-    class Config:
-        extra = "allow"
 
 
 class BiliBiliSearch(BaseTool):
@@ -87,69 +90,83 @@ class BiliBiliSearch(BaseTool):
                 return self.function
         return None
 
-    async def failed(self, platform, task: TaskHeader, receiver, reason, **kwargs):
-        try:
-            _meta = task.task_meta.reply_notify(
-                plugin_name=__plugin_name__,
-                write_back=True,
-                release_chain=True,
-                callback=TaskHeader.Meta.Callback(
-                    role="function",
-                    name=__plugin_name__
-                )
+    async def failed(self,
+                     task: "TaskHeader", receiver: "TaskHeader.Location",
+                     exception,
+                     env: dict,
+                     arg: dict, pending_task: "TaskBatch", refer_llm_result: dict = None,
+                     **kwargs
+                     ):
+        _meta = task.task_meta.reply_notify(
+            plugin_name=__plugin_name__,
+            callback=[TaskHeader.Meta.Callback.create(
+                name=__plugin_name__,
+                function_response=f"Run Failed --{exception}",
+                tool_call_id=pending_task.get_batch_id()
             )
-            await Task(queue=platform).send_task(
-                task=TaskHeader(
-                    sender=task.sender,
-                    receiver=receiver,
-                    task_meta=_meta,
-                    message=[
-                        RawMessage(
-                            user_id=receiver.user_id,
-                            chat_id=receiver.chat_id,
-                            text=f"Plugin {__plugin_name__} Run failed beacause {reason}"
-                        )
-                    ]
-                )
+            ],
+            write_back=True,
+            release_chain=True
+        )
+        logger.error(f"Plugin:{__plugin_name__} Run Failed:{exception}")
+        await Task.create_and_send(
+            queue_name=receiver.platform,
+            task=TaskHeader(
+                sender=task.sender,
+                receiver=receiver,
+                task_meta=_meta,
+                message=[
+                    RawMessage(
+                        user_id=receiver.user_id,
+                        chat_id=receiver.chat_id,
+                        text="Can't speak Chinese"
+                    )
+                ]
             )
-        except Exception as e:
-            logger.error(e)
+        )
 
-    async def callback(self, sign: str, task: TaskHeader, receiver: TaskHeader.Location, **kwargs):
-        return True
+    async def callback(self,
+                       task: "TaskHeader", receiver: "TaskHeader.Location",
+                       env: dict,
+                       arg: dict, pending_task: "TaskBatch", refer_llm_result: dict = None,
+                       **kwargs
+                       ):
+        return None
 
-    async def run(self, task: TaskHeader, receiver: TaskHeader.Location, arg, **kwargs):
+    async def run(self,
+                  task: "TaskHeader", receiver: "TaskHeader.Location",
+                  arg: dict, env: dict, pending_task: "TaskBatch", refer_llm_result: dict = None,
+                  ):
         """
         处理message，返回message
         """
-        env = kwargs.get("env", {})
-        try:
-            _set = Bili.parse_obj(arg)
-            _search_result = await search_on_bilibili(_set.keywords)
-            _meta = task.task_meta.reply_raw(
-                plugin_name=__plugin_name__,
-                callback=TaskHeader.Meta.Callback(
-                    role="function",
-                    name=__plugin_name__
+
+        _set = Bili.model_validate(arg)
+        _search_result = await search_on_bilibili(_set.keywords)
+        _meta = task.task_meta.reply_raw(
+            plugin_name=__plugin_name__,
+            callback=[
+                TaskHeader.Meta.Callback.create(
+                    name=__plugin_name__,
+                    function_response=f"Run Success",
+                    tool_call_id=pending_task.get_batch_id()
                 )
+            ]
+        )
+        await Task(queue=receiver.platform).send_task(
+            task=TaskHeader(
+                sender=task.sender,  # 继承发送者
+                receiver=receiver,  # 因为可能有转发，所以可以单配
+                task_meta=_meta,
+                message=[
+                    RawMessage(
+                        user_id=receiver.user_id,
+                        chat_id=receiver.chat_id,
+                        text=_search_result
+                    )
+                ]
             )
-            await Task(queue=receiver.platform).send_task(
-                task=TaskHeader(
-                    sender=task.sender,  # 继承发送者
-                    receiver=receiver,  # 因为可能有转发，所以可以单配
-                    task_meta=_meta,
-                    message=[
-                        RawMessage(
-                            user_id=receiver.user_id,
-                            chat_id=receiver.chat_id,
-                            text=_search_result
-                        )
-                    ]
-                )
-            )
-        except Exception as e:
-            logger.exception(e)
-            await self.failed(platform=receiver.platform, task=task, receiver=receiver, reason=str(e))
+        )
 
 
 __plugin_meta__ = PluginMetadata(
