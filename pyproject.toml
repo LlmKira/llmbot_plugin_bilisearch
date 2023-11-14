@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{ include = "llmbot_plugin_bilisearch" }]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 bilibili-api-python = "^16.1.0"
 
 [build-system]
