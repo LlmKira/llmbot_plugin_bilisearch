@@ -24,3 +24,8 @@ distribution = true
 dev = [
     "llmkira>=1.0.5",
 ]
+
+[project.entry-points."llmkira.extra.plugin"] # const value as "llmkira.extra.plugin"
+bilisearch = "llmbot_plugin_bilisearch"
+# <your plugin id>=<your plugin name>
+
