@@ -5,17 +5,18 @@
 <h2>llmbot-plugin-bilisearch</h2>
 </div>
 
-适用于 [OpenaiBot](https://github.com/LlmKira/Openaibot) 的函数插件，可以通过自然语言调用哔哩哔哩搜索功能。
+This is a tool_call plugin for [OpenaiBot](https://github.com/LlmKira/Openaibot) that allows you to invoke the Bilibili
+search
+function using natural language.
 
-## 📦 Install
+## 📦 Installation
 
 ```shell
 pip install llmbot_plugin_bilisearch -U
 ```
 
-https://github.com/LlmKira/llmbot_plugin_bilisearch/blob/main/llmbot_plugin_bilisearch/__init__.py#L2-L8
+## 🚀 The changes you need to make
 
-
-## 📝 Hook
-
-https://github.com/LlmKira/llmbot_plugin_bilisearch/blob/cbe0e4b20320b8789a5dad44eefef3c0c8233484/llmbot_plugin_bilisearch/__init__.py#L63-L71
+- [ ] Modify the registrant, project name, and mount point in the pyproject.toml file.
+- [ ] Modify the __init__.py file.
+- [ ] Modify the folder name.
