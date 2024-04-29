@@ -1,21 +1,26 @@
-[tool.poetry]
+[project]
 name = "llmbot_plugin_bilisearch"
-version = "0.1.5"
-description = ""
-authors = ["Your Name <you@example.com>"]
-license = "MIT"
+version = "0.1.0"
+description = "LLMBOT PLUGIN"
+authors = [
+    { name = "sudoskys", email = "coldlando@hotmail.com" },
+]
+dependencies = [
+    "bilibili-api-python>=16.2.0",
+]
+requires-python = ">=3.9,<3.12"
 readme = "README.md"
-packages = [{ include = "llmbot_plugin_bilisearch" }]
-
-[tool.poetry.dependencies]
-python = "^3.8"
-bilibili-api-python = "^16.1.0"
+license = { text = "MIT" }
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry.plugins."llmkira.extra.plugin"]
-# The entrypoint name is the name of the plugin.
-# 前面和后面都要唯一，注册钩子的时候会用到
-bilisearch = "llmbot_plugin_bilisearch"
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "llmkira>=1.0.5",
+]
